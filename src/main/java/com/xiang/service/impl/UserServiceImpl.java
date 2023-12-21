@@ -4,12 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiang.domain.ResponseResult;
+import com.xiang.domain.entity.Resume;
 import com.xiang.domain.vo.PageVo;
 import com.xiang.domain.vo.UserInfoVo;
 import com.xiang.domain.vo.UserLoginVo;
 import com.xiang.enums.AppHttpCodeEnum;
 import com.xiang.exception.SystemException;
 import com.xiang.mapper.UserMapper;
+import com.xiang.service.ResumeService;
 import com.xiang.service.UserService;
 import com.xiang.domain.entity.User;
 import com.xiang.utils.BeanCopyUtils;
@@ -21,6 +23,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
@@ -37,6 +40,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private ResumeService resumeService;
     @Override
     public ResponseResult register(User user) {
         //非空判断
@@ -90,12 +96,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
+    @Transactional
     public ResponseResult deleteUser(Long id) {
         User user3 = getById(id);
         if (user3 == null) {
             throw new SystemException(AppHttpCodeEnum.NO_SUCH_USER);
         }
         removeById(id);
+
+        LambdaQueryWrapper<Resume> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Resume::getUserId,id);
+        resumeService.remove(queryWrapper);
         return ResponseResult.ok();
     }
 
